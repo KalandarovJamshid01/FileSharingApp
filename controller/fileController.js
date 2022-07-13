@@ -19,13 +19,14 @@ let upload = multer({
 }).single("myfile");
 
 const addFile = async (req, res) => {
-  //Validate request
-  if (!req.file) {
-    return res.json({ error: "All fileds are required" });
-  }
-
   //Storage file
-  upload(req, res, (err) => {
+  upload(req, res, async (err) => {
+    //Validate request
+
+    if (!req.file) {
+      return res.json({ error: "All fileds are required" });
+    }
+
     if (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -35,14 +36,30 @@ const addFile = async (req, res) => {
       filename: req.file.filename,
       uuid: uuid4(),
       path: req.file.path,
-      size: req.file.siza,
+      size: req.file.size,
     });
-  });
-  const response = await file.save();
-  return res.json({
-    file: `${process.env.APP_BASE_URL}/files/${response.uuid}`,
-    
+    const response = await file.save();
+    return res.json({
+      file: `${process.env.APP_BASE_URL}/files/${response.uuid}`,
+    });
   });
 };
 
-module.exports = { addFile };
+const getFile = async (req, res) => {
+  try {
+    const file = await File.findOne({ uuid: req.params.uuid });
+    if (!file) {
+      return res.render("download", { error: "Link has been expired" });
+    }
+    return res.render("download", {
+      uuid: file.uuid,
+      filename: file.filename,
+      fileSize: file.size,
+      download: `${process.env.APP_BASE_URL}/files/download/${file.uuid}`,
+    });
+  } catch (error) {
+    return res.render("download", { error: "Something wrong" });
+  }
+};
+
+module.exports = { addFile, getFile };

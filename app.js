@@ -5,3 +5,5 @@ const fileRouter = require("./routes/fileRouter");
 const app = express();
 
 app.use("/api/files", fileRouter);
+
+module.exports = app;

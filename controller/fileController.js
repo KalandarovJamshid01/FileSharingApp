@@ -16,7 +16,7 @@ let storage = multer.diskStorage({
 let upload = multer({
   storage,
   limits: { fileSize: 1000000 * 100 },
-}).single("myfile2");
+}).single("myfile");
 
 const addFile = async (req, res) => {
   //Storage file
@@ -76,6 +76,36 @@ const downloadFile = async (req, res) => {
   console.log(file.path);
 };
 
-const sendEmail = async (req, res) => {};
+const sendEmail = async (req, res) => {
+  const { uuid, emailTo, emailFrom } = req.body;
+  // Validate request
+  if (!uuid || !emailTo || !emailFrom) {
+    return res.status(422).send({ error: "All fields are required" });
+  }
+  //Get data from database
+  const file = await File.findOne({ uuid: uuid });
+  console.log(file);
+  if (file.sender) {
+    return res.status(422).send({ error: "Email already sent" });
+  }
+  file.sender = emailFrom;
+  file.receiver = emailTo;
+  const response = await file.save();
+
+  //Send Email
+  const mail = require("./../seervices/mail");
+  mail({
+    from: emailFrom,
+    to: emailTo,
+    subject: "inShare file Sharing",
+    text: `${emailFrom} shared a file with you`,
+    html: require("./../seervices/emailTemplate")({
+      emailFrom: emailFrom,
+      download: `${process.env.APP_BASE_URL}/files/${file.uuid}`,
+      expires: "24 hours",
+      size: parseInt(file.size / 1000) + "KB",
+    }),
+  });
+};
 
 module.exports = { addFile, getFile, downloadFile, sendEmail };

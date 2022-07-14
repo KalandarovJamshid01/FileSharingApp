@@ -16,7 +16,7 @@ let storage = multer.diskStorage({
 let upload = multer({
   storage,
   limits: { fileSize: 1000000 * 100 },
-}).single("myfile");
+}).single("myfile2");
 
 const addFile = async (req, res) => {
   //Storage file
@@ -51,6 +51,7 @@ const getFile = async (req, res) => {
     if (!file) {
       return res.render("download", { error: "Link has been expired" });
     }
+
     return res.render("download", {
       uuid: file.uuid,
       filename: file.filename,
@@ -62,4 +63,19 @@ const getFile = async (req, res) => {
   }
 };
 
-module.exports = { addFile, getFile };
+const downloadFile = async (req, res) => {
+  console.log("hello");
+  const file = await File.findOne({ uuid: req.params.uuid });
+  if (!file) {
+    return res.render("download", {
+      error: "Link has been expired",
+    });
+  }
+  const filePath = `${__dirname}/../${file.path}`;
+  res.download(filePath);
+  console.log(file.path);
+};
+
+const sendEmail = async (req, res) => {};
+
+module.exports = { addFile, getFile, downloadFile, sendEmail };
